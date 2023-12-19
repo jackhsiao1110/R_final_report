@@ -158,7 +158,7 @@ anova(model3)
 ```
 
 ### Conclusion
-In conclusion, our results indicate a nuanced and complex relationship between latitudinal distribution and size class in reef fish populations. The unexpected findings highlight the need for further exploration and consideration of additional ecological factors to comprehensively understand the dynamics influencing size class variations in different latitudinal ranges.
+In conclusion, our results indicate a tiny and complex relationship between latitudinal distribution and size class in reef fish populations. The unexpected findings highlight the need for further exploration and consideration of additional ecological factors to comprehensively understand the dynamics influencing size class variations in different latitudinal ranges. This study encourages further exploration to reveal the multifaceted dynamics shaping the characteristics of reef fish populations.
 
 ### Reference
 * Edgar, Graham J., and Rick D. Stuart-Smith. "Systematic global assessment of reef fish communities by the Reef Life Survey program." Scientific Data 1.1 (2014): 1-8.
