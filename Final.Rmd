@@ -1,0 +1,166 @@
+---
+title: "Body size of reef fish decrease along with latitude descending"
+author: "Han-Chun Hsiao"
+date: "December 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Introduction
+
+* Reef fish populations play a crucial role in marine ecosystems, contributing to biodiversity and ecosystem stability. Understanding the factors that influence the distribution and size class of reef fish is essential for effective conservation and management.
+
+* The growth potential of coral reef fish is limited by the elevated water temperatures (Munday et al., 2008).
+
+* Estimated 42-60% of fast life-history reef fishes are more sensitive to temperature change and show declined population growth rates under 1°C warming. (Wang et al., 2020)
+
+* In this study, we investigate the relationship between the latitudinal distribution and size class of reef fish, focusing on Australia. By analyzing observational data, we aim to uncover patterns and potential drivers of size variation among reef fish species in different latitudinal ranges.
+
+### Materials and methods
+#### Data Collection and Preprocessing
+The dataset used in this study "IMOS - National Reef Monitoring Network Sub-Facility - Global reef fish abundance and biomass" was obtained from Australia Ocean Data Network (AODN, <https://portal.aodn.org.au/search>) in the previous survey program (Edgar and Stuart-Smith, 2014).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyr)
+library(dplyr)
+
+fish <- read.csv('/Users/hsiao/Documents/R_session_2023/R_final_report/reef_fish.csv', skip = 70, header = T)
+```
+
+We then extracted available data of reef fish to focus the study area on sampling sites surrounding Australia due to its wide range of latitude. Some data containing total observation less than 3 individuals should be removed to ensure representation meanings.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+fish1 <- fish[fish$country=='Australia',] # Focus on Australia
+fish2 <- fish1[fish1$total>=3,] # Observation amounts n>=3
+fish2 <- fish2[fish2$size_class>0,] # Remove obs without size data
+```
+
+#### Identification of Species with Widest Latitudinal Distribution
+The species are chosen with the widest latitudinal distributions to make the body mass and size comparable among geographical changes. In total, we selected the top five species, 507 observation records with the maximum ranges of latitude changes from S9.86° to S43.32°.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sp <- fish2 %>%
+  group_by(species_name) %>%
+  summarise(lat_range = ifelse(all(is.na(latitude)), NA, max(latitude, na.rm = TRUE) - min(latitude, na.rm = TRUE)))
+
+top_species <- sp %>%
+  arrange(desc(lat_range)) %>%
+  head(5)
+
+selected_species <- top_species %>% pull(species_name)
+fish3 <- fish2[fish2$species_name %in% selected_species,]
+```
+
+#### Geographical Mapping and Visualisation
+The geographical distribution of the selected species was visualized using a world map. Using R packages (sf, rnaturalearth, rnaturalearthdata), we created a map displaying the spatial distribution of the chosen species across different latitudes and longitudes. This visualization facilitated a qualitative understanding of the habitat preferences and distribution patterns of the selected reef fish species.
+
+#### Analysis of Latitudinal Distribution and Size Class
+##### Scatter Plots
+We employed scatter plots to depict the relationship between latitudinal distribution and size class. Each point on the scatter plot represented an observation of a specific reef fish species, with latitude on the x-axis and size class on the y-axis. These plots provided a visual representation of the variability in size class concerning latitudinal distribution.
+
+##### Linear Regression Models
+To quantify the relationship observed in the scatter plots, we fitted linear regression models. Three distinct models were constructed:
+
+1. Model 1: Latitude and Size Class
+Dependent Variable: Size class
+Independent Variable: Latitude
+This model aimed to evaluate the direct impact of latitude on the size class of reef fish.
+
+2. Model 2: Species Name and Size Class
+Dependent Variable: Size class
+Independent Variable: Species name
+This model explored whether differences in size class were attributable to specific reef fish species.
+
+3. Model 3: Interaction Between Latitude and Species Name
+Dependent Variable: Size class
+Independent Variables: Latitude and species name
+This model examined whether there was a combined effect of latitude and species name on size class.
+
+##### ANOVA Tests
+To assess the significance of each model, we conducted Analysis of Variance (ANOVA) tests. These tests provided statistical evidence regarding the relationships uncovered in the linear regression models. Specifically, ANOVA tests helped identify which variables significantly contributed to the observed variations in size class.
+
+### Results
+#### Identification of Species with Widest Latitudinal Distribution
+Upon analyzing the dataset, we successfully identified the top five reef fish species exhibiting the broadest latitudinal distribution. These species were determined based on the calculated latitudinal range, which involved assessing the difference between the maximum and minimum latitude values for each species. The selected species became the focal point of our investigation into the relationship between latitudinal distribution and size class.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+print(top_species)
+summary(fish3$latitude)
+```
+
+#### Geographical Mapping and Visualization
+The geographical distribution of the selected reef fish species was visualized on an interactive world map. The map displayed the spatial patterns of the chosen species across different latitudes and longitudes. This visualization offered valuable insights into the habitat preferences and distribution dynamics of the reef fish under consideration. However, it is essential to note that visual patterns do not necessarily imply a direct relationship between geographical location and size class.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Loading world map
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggplot2)
+theme_set(theme_bw()) 
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Study area and sampling sites
+xlim <- range(fish3$longitude, na.rm = TRUE) + c(-5, 5)
+ylim <- range(fish3$latitude, na.rm = TRUE) + c(-5, 5)
+min_size_class <- min(fish3$size_class, na.rm = TRUE)
+max_size_class <- max(fish3$size_class, na.rm = TRUE)
+ggplot(data = world) +
+  geom_sf() +
+  geom_point(data = fish3, aes(x = longitude, y = latitude), size = 1) +
+  coord_sf(xlim = xlim, ylim = ylim, expand = FALSE)
+```
+
+#### Scatter Plots
+To look into the relationship between latitudinal distribution and size class, scatter plots were employed. Each point on the scatter plots represented an observation of a specific reef fish species, with latitude on the x-axis and size class on the y-axis. Contrary to our initial expectations, the scatter plots did not reveal a clear and consistent pattern of size class variation based on latitudinal distribution. Instead, the data points exhibited considerable variability, suggesting the need for further statistical analysis.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+plot(fish3$size_class ~ fish3$latitude)
+```
+
+#### Linear Regression Models
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(fish3, aes(x = latitude, y = size_class)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+```
+
+* Model 1: Latitude and Size Class
+The first linear regression model aimed to quantify the direct impact of latitude on the size class of reef fish. However, the results indicated a weak and statistically non-significant relationship between latitude and size class (p = 0.228). This unexpected finding challenges the assumption that latitude alone significantly influences the size class of reef fish.
+
+* Model 2: Species Name and Size Class
+The second linear regression model explored whether differences in size class were attributable to specific reef fish species. The results revealed statistically significant differences in size class among different species (p = 0.7663). This underscores the importance of considering individual species characteristics when assessing size class dynamics.
+
+* Model 3: Interaction Between Latitude and Species Name
+The third linear regression model investigated the combined effect of latitude and species name on size class. Interestingly, the interaction effect was found to be statistically significant (p = 0.07983), suggesting that the relationship between latitude and size class may vary across different reef fish species.
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+model1 <- lm(fish3$size_class ~ fish3$latitude)
+summary(model1)
+
+model2 <- lm(fish3$size_class ~ fish3$species_name)
+summary(model2)
+
+model3 <- lm(fish3$size_class ~ fish3$latitude * fish3$species_name)
+summary(model3)
+```
+
+#### ANOVA Tests
+ANOVA tests were conducted to assess the overall significance of each linear regression model. Unexpectedly, all three models yielded non-significant results (p > 0.05), challenging our initial expectations. This implies that factors beyond latitude and species name may play a more substantial role in determining the size class of reef fish.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+anova(model1)
+
+anova(model2)
+
+anova(model3)
+```
+
+### Conclusion
+In conclusion, our results indicate a nuanced and complex relationship between latitudinal distribution and size class in reef fish populations. The unexpected findings highlight the need for further exploration and consideration of additional ecological factors to comprehensively understand the dynamics influencing size class variations in different latitudinal ranges.
+
+### Reference
+* Edgar, Graham J., and Rick D. Stuart-Smith. "Systematic global assessment of reef fish communities by the Reef Life Survey program." Scientific Data 1.1 (2014): 1-8.
+* Wang, Hui-Yu, et al. "Life histories determine divergent population trends for fishes under climate warming." Nature Communications 11.1 (2020): 4088.
+* Munday, P. L., et al. "Elevated temperature restricts growth potential of the coral reef fish Acanthochromis polyacanthus." Coral Reefs 27 (2008): 927-931.
